@@ -1,0 +1,49 @@
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: soc_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: always
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: soc_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017
+      - DATABASE_NAME=soc_dashboard
+      - PYTHONPATH=/app
+    depends_on:
+      - mongodb
+    # Note: Packet capture typically requires host networking or specific capabilities
+    # network_mode: host
+    # cap_add:
+    #   - NET_ADMIN
+    #   - NET_RAW
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: soc_frontend
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./frontend:/app
+    environment:
+      - BACKEND_URL=http://backend:8000/api/v1
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  mongodb_data:
